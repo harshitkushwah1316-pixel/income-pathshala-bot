@@ -1,10 +1,15 @@
 import os
 import requests
 from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
+from telegram.ext import (
+    ApplicationBuilder,
+    CommandHandler,
+    MessageHandler,
+    ContextTypes,
+    filters,
+)
 
 TOKEN = os.getenv("BOT_TOKEN")
-SHEET_API_URL = os.getenv("SHEET_API_URL")
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ref = context.args[0] if context.args else ""
@@ -15,33 +20,36 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "👋 Welcome to Income Pathshala\n\n"
         "💰 Join ₹200 | Earn ₹150 per referral\n\n"
-        "👇 Continue karne ke liye phone number share karein",
-        reply_markup=ReplyKeyboardMarkup(keyboard, resize_keyboard=True, one_time_keyboard=True)
+        "➡ Continue karne ke liye phone number share karein",
+        reply_markup=ReplyKeyboardMarkup(
+            keyboard, resize_keyboard=True, one_time_keyboard=True
+        ),
     )
 
 async def save_contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
     contact = update.message.contact
+    user = update.message.from_user
 
     data = {
-        "telegram_id": user.id,
         "name": user.first_name,
-        "username": user.username or "",
+        "username": user.username,
         "phone": contact.phone_number,
-        "referred_by": context.user_data.get("ref", "")
+        "telegram_id": user.id,
+        "ref": context.user_data.get("ref", ""),
     }
 
-    requests.post(SHEET_API_URL, json=data)
-
+    # Abhi sirf confirmation
     await update.message.reply_text(
-        "✅ Details saved successfully!\n\n"
-        "💳 Ab ₹200 payment karein\n"
-        "📸 Payment ke baad screenshot bhejein"
+        "✅ Details received!\nAdmin approval ke baad earning start hogi."
     )
 
-app = ApplicationBuilder().token(TOKEN).build()
-app.add_handler(CommandHandler("start", start))
-app.add_handler(MessageHandler(filters.CONTACT, save_contact))
+def main():
+    app = ApplicationBuilder().token(TOKEN).build()
 
-print("Bot running...")
-app.run_polling()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.CONTACT, save_contact))
+
+    app.run_polling()
+
+if __name__ == "__main__":
+    main()
