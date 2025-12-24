@@ -6,40 +6,45 @@ from telegram.ext import (
     CommandHandler,
     MessageHandler,
     ContextTypes,
-    filters,
+    filters
 )
+
 TOKEN = os.getenv("BOT_TOKEN")
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    ref = context.args[0] if context.args else ""
-    context.user_data["ref"] = ref
     keyboard = [[KeyboardButton("📱 Share Phone Number", request_contact=True)]]
+    reply_markup = ReplyKeyboardMarkup(
+        keyboard, resize_keyboard=True, one_time_keyboard=True
+    )
+
     await update.message.reply_text(
         "👋 Welcome to Income Pathshala\n\n"
         "💰 Join ₹200 | Earn ₹150 per referral\n\n"
-        "➡ Continue karne ke liye phone number share karein",
-        reply_markup=ReplyKeyboardMarkup(
-            keyboard, resize_keyboard=True, one_time_keyboard=True
-        ),
+        "👉 Continue karne ke liye phone number share karein",
+        reply_markup=reply_markup
     )
+
 async def save_contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
     contact = update.message.contact
     user = update.message.from_user
-    data = {
-        "name": user.first_name,
-        "username": user.username,
-        "phone": contact.phone_number,
-        "telegram_id": user.id,
-        "ref": context.user_data.get("ref", ""),
-    }
-    # Abhi sirf confirmation
+
+    phone = contact.phone_number
+    name = user.first_name
+    username = user.username
+
     await update.message.reply_text(
-        "✅ Details received!\nAdmin approval ke baad earning start hogi."
+        "✅ Thanks! Your details are saved.\n\n"
+        f"Name: {name}\n"
+        f"Phone: {phone}"
     )
+
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
+
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.CONTACT, save_contact))
 
+    print("Bot started...")
     app.run_polling()
 
 if __name__ == "__main__":
